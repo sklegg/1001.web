@@ -1,0 +1,58 @@
+@page "/summary/{linkValue}"
+@inject Web1001.Services.IUserService userService
+@using Web1001.Models;
+
+<PageTitle>1001 Songs | Summary</PageTitle>
+
+<div style="
+    border-radius: 4px;
+    background-color: #6200ee;
+    border: 2px black solid;
+    color: white;
+    padding: 5px;">
+    Have you started your own 1001 Songs journey? Click the Home button and create your project!
+</div>
+
+<hr>
+
+@if (summary != null)
+{
+  <h3>Review Summary</h3>
+  <div>Total Reviews: <b>@summary.ReviewCount</b></div>
+  <div>Average Rating: <b>@summary.ReviewAverage</b></div>
+  <hr>
+  <h4>Highest Rated Songs ⭐⭐⭐⭐⭐</h4>
+  <ul>
+  @foreach (var banger in @summary.Bangers)
+  {
+    <li>
+      @banger.Title by @banger.Artist (@banger.Year)
+    </li>
+  }
+  </ul>
+
+
+  <h4>Lowest Rated Songs ⭐</h4>
+  <ul>
+  @foreach (var dud in @summary.Duds)
+  {
+    <li>
+      @dud.Title by @dud.Artist (@dud.Year)
+    </li>
+  }
+  </ul>
+}
+
+@code
+{
+    [Parameter]
+    public string? linkValue { get; set; }
+    private SummaryView? summary { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        if (!string.IsNullOrEmpty(linkValue))
+        {
+            summary = await userService.GetSummary(linkValue);
+        }
+    }
+}

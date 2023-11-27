@@ -1,0 +1,149 @@
+@page "/about"
+
+<PageTitle>1001 Songs | About</PageTitle>
+
+<div class="mdc-layout-grid">
+  <div class="mdc-layout-grid__inner">
+    <div class="mdc-layout-grid__cell--span-4">
+        <MBCard AutoStyled="true"
+                class="mb-basic-with-text-over-media"
+                @onclick="@(() => CardClick("Your host"))">
+                <Primary>Your host</Primary>
+            <PrimaryAction>
+                <div class="mdc-card__media mdc-card__media--square" style="background-image: url(&quot;me.jpg&quot;);">
+                    <div class="mdc-card__media-content">
+
+                    </div>
+                </div>
+            </PrimaryAction>
+        </MBCard>
+    </div>
+
+    <div class="mdc-layout-grid__cell--span-6">
+        <MBCard AutoStyled="true"
+                class=""
+                @onclick="@(() => CardClick("How it works"))">
+                <Primary>How it works...</Primary>
+            <PrimaryAction>
+                <div class="mb-card__secondary mdc-typography mdc-typography--body2">
+                    <div class="mb-card__autostyled">
+                        <ul>
+                            <li>There are more than 1001 Songs in the database currently. All songs from the 2010 edition of the book are included along with some extras from other editions. I resisted all urges to editorialize and add songs of my choosing.</li>
+                            <li>You anonymously rate and comment on songs. </li>
+                            <li>You can only see other users' reviews once you have submitted a review.</li>
+                            <li>I have ideas for more features on the site...</li>
+                        </ul>
+                    </div>
+                </div>
+            </PrimaryAction>
+        </MBCard>
+    </div>
+
+    <div class="mdc-layout-grid__cell--span-2">
+        <MBCard AutoStyled="true"
+                class=""
+                @onclick="@(() => CardClick("Feedback"))">
+                <Primary>Feedback</Primary>
+            <PrimaryAction>
+                <div class="mdc-card__media mdc-card__media--16-9 mb-card__media" style="background-image: url(&quot;outline_email_black_48dp.png&quot;);">
+                    <div class="">
+                        <div class="mb-card__autostyled">
+                        
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-card__secondary mdc-typography mdc-typography--body2">Did you notice any weirdness? Is there a feature you would like to see? <a href="mailto:wizard@1001songsgenerator.com">Email Me</a> your feedback.  </div>
+            </PrimaryAction>
+        </MBCard>
+    </div>
+
+    <div class="mdc-layout-grid__cell--span-6">
+        <MBCard AutoStyled="true"
+                class=""
+                @onclick="@(() => CardClick("Inspo"))">
+                <Primary>Inspiration</Primary>
+            <PrimaryAction>
+                <div class="mb-card__secondary mdc-typography mdc-typography--body2">
+                    <div class="mb-card__autostyled">
+                        <ul>
+                        <li><a href="https://1001albumsgenerator.com/" target="_blank">The 1001 Albums Generator project</a></li>
+                        <li>Pat Finnerty</li>
+                        <li><a href="https://fravia.net/" target="_blank">Fravia</a></li>
+                        <li>Cathode Ray Dude</li>
+                        <li>Bandsplain</li>
+                        </ul>
+                    </div>
+                </div>                
+            </PrimaryAction>
+        </MBCard>
+    </div>
+
+    <div class="mdc-layout-grid__cell--span-6">
+        <MBCard AutoStyled="true"
+                class=""
+                @onclick="@(() => CardClick("History"))">
+                <Primary>Release History</Primary>
+            <PrimaryAction>
+                    <div class="mb-card__secondary mdc-typography mdc-typography--body2">
+                        <div class="mb-card__autostyled">
+                            <ul>
+                            <li>2023/03/01: initial alpha release</li>
+                            <li>2023/03/25: Public Beta (phase 1 feature complete)</li>
+                            <li>2023/04/01: LAUNCH! 🚀</li>
+                            <li>2023/04/04: Add wikipedia link to Review page, +1 bug fix</li>
+                            <li>2023/04/08: Add spotify app link, shareable summary link, improved History page</li>
+                            </ul>
+                        </div>
+                    </div>                
+            </PrimaryAction>
+        </MBCard>
+    </div>
+
+    <div class="mdc-layout-grid__cell--span-4">
+        <MBCard AutoStyled="true"
+                class=""
+                @onclick="@(() => CardClick("Donate"))">
+                <Primary>Donate</Primary>
+            <PrimaryAction>
+                <div class="mdc-card__media mdc-card__media--16-9 mb-card__media" style="background-image: url(&quot;Ko-fi_Icon_RGB_stroke.png&quot;);">
+                    <div class="">
+                        <div class="mb-card__autostyled">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-card__secondary mdc-typography mdc-typography--body2">
+                    If you enjoy the project, you can offset the cost of its operation by pitching in some currency at Ko-fi.
+                    <a href='https://ko-fi.com/Z8Z1CKBTP' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi5.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a></div>
+            </PrimaryAction>
+        </MBCard>
+    </div>
+
+
+    <div class="mdc-layout-grid__cell--span-4">
+        <MBCard AutoStyled="true"
+                class="mb-basic-with-text-over-media"
+                @onclick="@(() => CardClick("Reddit"))">
+                <Primary>Discuss on Reddit</Primary>
+            <PrimaryAction>
+                <div class="mdc-card__media mdc-card__media--16-9 mb-card__media" style="background-image: url(&quot;reddit-logo-2.png&quot;);">
+                    <div class="">
+                        <div class="mb-card__autostyled">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-card__secondary mdc-typography mdc-typography--body2"><a href='https://reddit.com/r/1001SongsGenerator' target='_blank'>/r/1001SongsGenerator</a></div>
+            </PrimaryAction>
+        </MBCard>
+    </div>
+
+
+</div></div>
+
+@code {
+    private void CardClick(string notification)
+    {
+        Console.WriteLine(notification);
+    }
+}

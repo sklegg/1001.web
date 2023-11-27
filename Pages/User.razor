@@ -1,0 +1,63 @@
+@page "/user"
+@implements IDisposable
+
+@inject IMBToastService toastService
+
+@inject Web1001.Services.IUserService userService
+@inject GlobalState globalState
+
+@using Web1001.Models.Forms
+
+<PageTitle>1001 Songs | User</PageTitle>
+
+<EditForm Model="@form" OnValidSubmit="@SubmitPreferences">
+    <h5>Which page to display after submitting a review?</h5>
+    <MBRadioButtonGroup @bind-Value="@reviewSubmitAction"
+                        Items="@SubmitActions"
+                        ItemValidation="@MBItemValidation.NoSelection" />
+    <button class="mdc-button mdc-button--raised" type="Submit">
+        <span class="mdc-button__ripple"></span>
+        <i class="material-icons mdc-button__icon" aria-hidden="true">save</i>            
+
+        <span class="mdc-button__label">Save</span>
+    </button>                                        
+</EditForm>
+
+@code {
+    private UserPrefsModel form = new();
+
+    private string reviewSubmitAction = "SONG";
+
+    private MBSelectElement<string>[] SubmitActions = new MBSelectElement<string>[]
+    {
+        new MBSelectElement<string> { SelectedValue = "SONG", Label = "Song Page" },
+        new MBSelectElement<string> { SelectedValue = "HISTORY", Label = "History Page" },
+        new MBSelectElement<string> { SelectedValue = "REVIEW", Label = "Review Page" }
+    }; 
+
+    private async Task SubmitPreferences() 
+    {
+        form.ReviewSubmitAction = reviewSubmitAction;
+
+        if (form != null) {
+            await userService.UpdatePreferences(form);
+            globalState.UserPreferences = new UserPrefsModel { ReviewSubmitAction = form.ReviewSubmitAction };
+            toastService.ShowToast(
+                level: MBToastLevel.Success,
+                showIcon: true, 
+                message: "Preferences saved.");
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        var prefs = globalState.UserPreferences;
+        reviewSubmitAction = prefs.ReviewSubmitAction ?? "SONG";        
+        globalState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        globalState.OnChange -= StateHasChanged;
+    }
+}

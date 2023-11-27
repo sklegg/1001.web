@@ -1,0 +1,108 @@
+@page "/history"
+
+@inject NavigationManager navManager
+
+@inject Web1001.Services.ISongsService songService
+@inject Web1001.Services.IUserService userService
+@inject Web1001.Services.IReviewService reviewService
+
+@using Web1001.Models
+
+<PageTitle>1001 Songs | History</PageTitle>
+
+<style>
+    .overflow-auto {
+        overflow: auto;
+        width: 100%;
+    }
+    .reviews-table {
+        min-width: 100%;
+        width: 100%;
+    }
+    .reviews-table > th {
+        font-weight: bold;
+    }
+
+    .mdc-data-table__table {
+        white-space: inherit;
+    }
+</style>
+
+<h3>Your Reviews</h3>
+
+@if (Reviews.Count == 0)
+{
+    <div>Go to the Reviews page to get started...</div>
+} else {
+    
+    <div>
+        You have submitted <b>@totalReviews</b> reviews with an average score of <b>@averageRating</b>.
+    </div>
+
+    @if (string.IsNullOrEmpty(LinkUrl))
+    {
+        <div>
+            <p>
+                <MBButton ButtonStyle="@MBButtonStyle.Text"
+                        LeadingIcon="Share"
+                        Label="Get a Shareable Link"
+                        @onclick="@(() => Share())" />
+            </p>
+        </div>
+    } else {
+        <MBTextArea Rows="1" Cols="65" @bind-Value="@LinkUrl" onfocus="this.select()" />
+    }
+
+    <div class="overflow-auto">
+        <p>
+            <MBDataTable class="reviews-table" Items="@Reviews" ShowProgress="@ShowProgress" Context="row">
+                <TableHeader>
+                    <th class="mdc-data-table__header-cell header-bold" role="columnheader" scope="col">Song</th>
+                    <th class="mdc-data-table__header-cell header-bold" role="columnheader" scope="col">Artist</th>
+                    <th class="mdc-data-table__header-cell mdc-data-table__header-cell--numeric header-bold" role="columnheader" scope="col">Stars</th>
+                    <th class="mdc-data-table__header-cell header-bold" role="columnheader" scope="col">Comment</th>
+                    <th class="mdc-data-table__header-cell mdc-data-table__header-cell--numeric header-bold" role="columnheader" scope="col">Total Reviews</th>
+                    <th class="mdc-data-table__header-cell mdc-data-table__header-cell--numeric header-bold" role="columnheader" scope="col">Average</th>
+                </TableHeader>
+                <TableRow>
+                    <td class="mdc-data-table__cell"><a href="/song/@row.ReviewedSong.SongId">@row.ReviewedSong.SongName</a></td>
+                    <td class="mdc-data-table__cell">@row.ReviewedSong.ArtistName</td>
+                    <td class="mdc-data-table__cell mdc-data-table__cell--numeric">@row.Review.StarRating</td>
+                    <td class="mdc-data-table__cell"><div style="">@row.Review.Comment</div></td>
+                    <td class="mdc-data-table__cell mdc-data-table__cell--numeric">@row.ReviewCount</td>
+                    <td class="mdc-data-table__cell mdc-data-table__cell--numeric">@row.ReviewAverage</td>
+                </TableRow>
+            </MBDataTable>
+        </p>
+    </div>
+}
+
+@code
+{
+    private List<HistoryReviewModel> Reviews = new();
+    private int totalReviews;
+    private double averageRating;    
+    private bool ShowProgress { get; set; }
+    private string LinkUrl { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {  
+        ShowProgress = true;
+        List<HistoryReviewModel> unsorted = await userService.GetReviews();
+        ShowProgress = false;
+
+        if (unsorted != null && unsorted.Count > 0)
+        {
+            Reviews = unsorted.OrderByDescending(r => r.Review.PostedDateTime).ToList();
+            totalReviews = unsorted.Count;
+            averageRating = Math.Round(unsorted.Average(h => h.Review.StarRating), 2);
+        }
+    }
+
+    private async Task Share()
+    {
+        string linkValue = await userService.GetShareLink();
+        LinkUrl = navManager.BaseUri + "summary/" + linkValue;
+        Console.WriteLine(navManager.BaseUri);
+    }
+}

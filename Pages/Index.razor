@@ -1,0 +1,233 @@
+@page "/"
+@implements IDisposable
+@inject NavigationManager navManager
+
+@inject Web1001.Services.IUserService userService
+@inject Web1001.Shared.GlobalState globalState
+
+@using Web1001.Models.Forms
+
+<PageTitle>🎧 1001 Songs 🎧</PageTitle>
+
+<p>
+Do you fancy yourself a music critic? Are you ready to tell the world what you really think about "@RandomSongTitle" by @RandomArtist? This site will guide you through every song in the book <i>1001 Songs You Must Hear Before You Die</i> by Robert Dimery.
+</p><p>
+This project is heavily inspired by the <a target="_blank" rel="noopener noreferrer" href="https://1001albumsgenerator.com/">1001 Albums Generator</a> site but has a couple of twists. Like the original, I pick the order of the songs you will review. You cannot continue in the project until you submit a rating and a comment. Unlike the 1001 Albums project, you will not have an opportunity to view other users' reviews until you submit your own. You've got to come original. However there is no limit to how many songs you can review in a day. Listen to all of them in one sitting if you want.
+</p>
+<p></p>
+<p>
+Special thanks to Alexander Nilsson from the 1001 Albums Generator.
+</p>
+
+
+
+@if (!LoggedIn && !Submitted)
+{
+    <MBDivider Padded="true" />
+
+    <MBTabBar @bind-Value="@TabIndex"
+            Context="item"
+            Items="@TabLabels"
+            StackIcons="@StackIcons"
+            style="margin: 6px; ">
+
+        <Icon>
+            @{ var name = "fa-" + item; }
+            <MBIcon IconFoundry="MBIconHelper.FAFoundry()"
+                    IconName="@name" />
+        </Icon>
+
+        <Label>
+            @item
+        </Label>
+    </MBTabBar>
+
+    @if (_tabIndex == 0)
+    {
+        <div style="color: var(--mdc-theme-primary)">Resume your journey through the 1001 songs...</div>
+        <EditForm Model="@form" OnValidSubmit="@SubmitLogin">
+            <DataAnnotationsValidator />  
+            <ValidationSummary />  
+            <label>
+                <InputText placeholder="Your email address" style="width: 300px;" oninput="this.value=this.value.toLowerCase()" @bind-Value="form.Email" />
+                <button class="mdc-button mdc-button--raised" type="Submit">
+                    <span class="mdc-button__ripple"></span>
+                    <i class="material-icons mdc-button__icon" aria-hidden="true">login</i>            
+
+                    <span class="mdc-button__label">Login</span>
+                </button>
+            </label>
+        </EditForm>
+    }
+
+    @if (_tabIndex == 1)
+    {
+        <div style="color: var(--mdc-theme-primary)">Create a new project and start reviewing songs!</div>
+        
+        <EditForm Model="@form" OnValidSubmit="@SubmitCreate">
+            <DataAnnotationsValidator />  
+            <ValidationSummary />              
+            <label>
+                <InputText placeholder="Your email address" style="width: 300px;" oninput="this.value=this.value.toLowerCase()" @bind-Value="form.Email" />
+                <button class="mdc-button mdc-button--raised" type="Submit">
+                    <span class="mdc-button__ripple"></span>
+                    <i class="material-icons mdc-button__icon" aria-hidden="true">add_circle</i>            
+
+                    <span class="mdc-button__label">Create</span>
+                </button>
+            </label>
+        </EditForm> 
+               
+        <div>All I need is an email address to send a MAGIC login link. 
+            Content on the site is totally anonymous and I will never share your address for any reason. 
+            Once you click the MAGIC link, your browser will be logged into this site forever. 
+            You can use the application in another browser, too. Simply login and continue your journey.</div>
+    }
+}
+
+@if (!LoggedIn && Submitted)
+{
+    <div style="color: #0071c1">Check your @form.Email email account for a MAGIC link that lets you log into your project!</div>
+}
+
+@if (LoggedIn)
+{
+    <MBButton ButtonStyle="@MBButtonStyle.ContainedRaised"
+            Label="Review your next song!"
+            @onclick="@(() => navManager.NavigateTo("/review"))" />
+    <p>
+    <MBButton ButtonStyle="@MBButtonStyle.Outlined"
+            Label="Set Preferences"
+            @onclick="@(() => navManager.NavigateTo("/user"))" />            
+    </p>
+    <p>
+    <MBButton ButtonStyle="@MBButtonStyle.Outlined"
+            Label="Logout"
+            @onclick="@(() => Logout())" />            
+    </p>    
+}
+
+@code {
+    private LoginFormModel form = new();
+
+    private string? RandomSongTitle { get; set; }
+    private string? RandomArtist { get; set; }
+    private bool LoggedIn { get; set; }
+    private bool Submitted { get; set; }
+
+
+    private int _tabIndex = 0;
+    private int TabIndex
+    {
+        get => _tabIndex;
+        set
+        {
+            if (value != _tabIndex)
+            {
+                _tabIndex = value;
+            }
+        }
+    }
+
+    private bool StackIcons { get; set; } = false;
+    private string[] TabLabels { get; set; } = { "LOGIN", "CREATE PROJECT" }; 
+
+    protected override async Task OnInitializedAsync()
+    {
+        globalState.OnChange += StateHasChanged;
+
+        SetRandom();
+        LoggedIn = await CheckForValidCredentials();
+        if (LoggedIn)
+        {
+            var prefs = await userService.GetPreferences();
+            globalState.UserPreferences = prefs;
+            globalState.LoggedIn = true;
+        } else {
+            globalState.LoggedIn = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        globalState.OnChange -= StateHasChanged;
+    }      
+
+    private async Task<bool> CheckForValidCredentials()
+    {
+        return await userService.CheckCredentials();
+    }
+
+    private async Task SubmitLogin() 
+    {
+        bool success = false;
+        Submitted = true;
+        if (form != null && form.Email != null) {
+            success = await userService.Login(form);
+        }
+    }
+
+    private async Task SubmitCreate()
+    {
+        bool success = false;
+        Submitted = true;
+        if (form != null && form.Email != null) {
+            success = await userService.CreateUserAccount(form);
+        }        
+    }
+
+    private async Task Logout()
+    {
+        await userService.Logout();
+        navManager.NavigateTo("/", true);
+    }
+
+    private void SetRandom()
+    {
+        int r = new Random().Next(0, 9);
+
+        switch (r)
+        {
+            case 0:
+                RandomSongTitle = "I'm a Believer";
+                RandomArtist = "The Monkees";
+                return;
+            case 1:
+                RandomSongTitle = "September Song";
+                RandomArtist = "Ella Fitzgerald";
+                return;
+            case 2:
+                RandomSongTitle = "It's Too Late";
+                RandomArtist = "Carole King";
+                return;
+            case 3:
+                RandomSongTitle = "Dancing Queen";
+                RandomArtist = "ABBA";
+                return;
+            case 4:
+                RandomSongTitle = "Anarchy In The UK";
+                RandomArtist = "Sex Pistols";
+                return;
+            case 5:
+                RandomSongTitle = "Born for a Purpose";
+                RandomArtist = "Dr. Alimantado";
+                return;
+            case 6:
+                RandomSongTitle = "Smooth Operator";
+                RandomArtist = "Sade";
+                return;
+            case 7:
+                RandomSongTitle = "Nothing Compares 2 U";
+                RandomArtist = "Sinéad O'Connor";
+                return;
+            case 8:
+                RandomSongTitle = "One More Time";
+                RandomArtist = "Daft Punk";
+                return;
+            case 9:
+                RandomSongTitle = "Mykonos";
+                RandomArtist = "Fleet Foxes";
+                return;                                                                                                                                
+        }
+    }
+}

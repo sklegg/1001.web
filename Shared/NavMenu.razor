@@ -1,0 +1,53 @@
+@implements IDisposable
+@inject Web1001.Shared.GlobalState globalState
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a href=""><img style="height: 60px; width: 60px;" src='logow.png'></a>
+        <a class="navbar-brand" href="">1001 Songs</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>      
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="review" hidden="@(!globalState.LoggedIn)">
+                <i class="material-icons" style="padding-right: 8px;">grade</i> Review
+            </NavLink>
+        </div>  
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="history" hidden="@(!globalState.LoggedIn)">
+                <i class="material-icons" style="padding-right: 8px;">history</i> History
+            </NavLink>
+        </div>    
+    </nav>
+</div>
+
+
+@code {
+    private bool collapseNavMenu = true;
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    protected override void OnInitialized()
+    {
+        globalState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        globalState.OnChange -= StateHasChanged;
+    }    
+}

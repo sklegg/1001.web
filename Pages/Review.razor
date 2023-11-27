@@ -1,0 +1,198 @@
+@page "/review"
+@inject IJSRuntime JS
+@inject NavigationManager navManager
+
+@inject IMBToastService toastService
+
+@inject Web1001.Services.ISongsService songService
+@inject Web1001.Services.IUserService userService
+@inject Web1001.Services.IReviewService reviewService
+@inject GlobalState globalState
+
+@using Web1001.Models
+@using Web1001.Models.Forms
+
+<PageTitle>1001 Songs | Review</PageTitle>
+
+<div>
+@if(currentSong != null)
+{
+    <h3 id="topOfPage">Your Review of "@currentSong.SongName" by @currentSong.ArtistName (@currentSong.Year)</h3>
+    <p>
+        <a style="padding-right: 10px;" target="_blank" rel="noopener noreferrer" href="@GetWikipediaLink()">Wikipedia</a>
+        Spotify: 
+        <a rel="noopener noreferrer" href="@GetSpotifyAppLink()">App</a> | 
+        <a target="_blank" rel="noopener noreferrer" href="@currentSong.SpotifyUri">Web</a>
+    </p>
+    <p>
+        <img class="responsive" src="@currentSong.ImageUri">
+    </p>
+
+    <EditForm Model="@reviewModel" OnValidSubmit="@SubmitReview" OnInvalidSubmit="@ErrorSubmit">
+        <MBButton type="button" ButtonStyle="@ButtonStyles[0]" Label="⭐" @onclick="@(() => RatingClick(1))" />
+        <MBButton type="button" ButtonStyle="@ButtonStyles[1]" Label="⭐⭐" @onclick="@(() => RatingClick(2))" />
+        <MBButton type="button" ButtonStyle="@ButtonStyles[2]" Label="⭐⭐⭐" @onclick="@(() => RatingClick(3))" />
+        <MBButton type="button" ButtonStyle="@ButtonStyles[3]" Label="⭐⭐⭐⭐" @onclick="@(() => RatingClick(4))" />
+        <MBButton type="button" ButtonStyle="@ButtonStyles[4]" Label="⭐⭐⭐⭐⭐" @onclick="@(() => RatingClick(5))" />
+
+        <p></p>
+
+        <MBTextArea id="comment" 
+            Rows="5" Cols="56"
+            Label="@GetCommentLabel()"
+            @bind-Value="reviewModel.Comment"/>
+
+        <p></p>
+
+        @if (errorMessages.Count > 0 )
+        {
+            @foreach (var msg in errorMessages)
+            {
+                <p><div style="color:red">@msg</div></p>
+            }
+        }
+
+        <button disabled="@isSubmitting" type="submit">Submit</button>
+    </EditForm>
+} else {
+    <h3>What's Next??</h3>
+}
+</div>
+
+@code {
+    private bool isSubmitting = false;
+    private string afterSubmitAction = AfterSubmit.SongPage;
+    private SongModel? currentSong;
+    private ReviewModel reviewModel = new();
+    private List<string> errorMessages = new();
+    private string[] CommentLabels = new string[] {
+        "What did Christgau say?",
+        "A goddamn, gorgeous, beautiful song?",
+        "Yacht or nyacht?",
+        "What makes this song great?",
+        "This one still slaps?"
+    };
+
+    private string GetCommentLabel()
+    {
+        Random random = new Random();
+        int r = random.Next(0, CommentLabels.Length - 1);
+        return CommentLabels[r];
+    }
+
+    private string GetWikipediaLink()
+    {
+        if (currentSong != null && currentSong.SongName != null && currentSong.ArtistName != null)
+        {
+            string escapedSongName = currentSong.SongName.Replace(" ","+");
+            string escapedArtist = currentSong.ArtistName.Replace(" ","+");
+            return "https://en.wikipedia.org/w/index.php?search=\"" + escapedSongName + "\"" + "+\"" + escapedArtist + "\"";
+        }
+        return "";
+    }
+
+    private string GetSpotifyAppLink()
+    {
+        if (currentSong != null && !string.IsNullOrEmpty(currentSong.SpotifyUri))
+        {
+            try {
+                string [] parts = currentSong.SpotifyUri.Split("/");
+                string [] result = { "spotify", "track", parts.Last() };
+                return String.Join(":", result);
+            } catch (Exception) {
+                return "";
+            }
+        }
+        return "";        
+    }
+
+    private MBButtonStyle[] ButtonStyles = new MBButtonStyle[5] { MBButtonStyle.Outlined, MBButtonStyle.Outlined, MBButtonStyle.Outlined, MBButtonStyle.Outlined, MBButtonStyle.Outlined };  
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentSong = await GetUsersCurrentSong();
+        if (globalState.UserPreferences.ReviewSubmitAction != null)
+            afterSubmitAction = globalState.UserPreferences.ReviewSubmitAction;
+    }
+
+    public async Task<SongModel?> GetUsersCurrentSong() {
+        Guid? currentSongId = await userService.GetUsersCurrentSongId();
+        
+        if (currentSongId != null)
+        {
+            Guid songId = currentSongId.GetValueOrDefault();
+            return await songService.GetSongById(songId.ToString());
+        }
+
+        return null;
+    }
+
+    public bool FormIsValid()
+    {
+        return reviewModel.StarRating > 1 && reviewModel.StarRating < 5 && reviewModel.Comment != null && reviewModel.Comment.Length > 0;
+    }
+
+    public void RatingClick (int stars)
+    {
+        errorMessages.Clear();
+        for(int i = 0; i < 5; i++)
+        {
+            if (i == (stars - 1))
+            {
+                ButtonStyles[i] = MBButtonStyle.ContainedUnelevated;
+            } else {
+                ButtonStyles[i] = MBButtonStyle.Outlined;
+            }
+        }
+        reviewModel.StarRating = stars;
+    }           
+
+    public async Task SubmitReview()
+    {
+        if (reviewModel.StarRating < 1 || reviewModel.StarRating > 5)
+        {
+            errorMessages.Add("Please select a star rating.");
+            return;
+        }
+
+        if (reviewModel.Comment == null || reviewModel.Comment.Length == 0)
+        {
+            errorMessages.Add("Please leave a comment on this song.");
+            return;
+        }
+
+        if (currentSong != null && currentSong.SongId != null)
+        {
+            isSubmitting = true;
+            reviewModel.SongId = Guid.Parse(currentSong.SongId);
+            _ = await reviewService.SubmitReview(reviewModel); 
+            if (afterSubmitAction == AfterSubmit.SongPage || afterSubmitAction == null)
+                navManager.NavigateTo("/song/" + currentSong.SongId);
+            if (afterSubmitAction == AfterSubmit.HistoryPage)
+                navManager.NavigateTo("/history");
+            if (afterSubmitAction == AfterSubmit.ReviewPage) {
+                // reloading the app messes up the globalState
+                await RefreshCurrentSongAfterSubmit();
+            }
+            isSubmitting = false;
+        }
+    }
+
+    private async Task RefreshCurrentSongAfterSubmit()
+    {
+        reviewModel = new();
+        for (int i = 0; i < 5; i++)
+            ButtonStyles[i] = MBButtonStyle.Outlined;
+
+        currentSong = await GetUsersCurrentSong();
+        await JS.InvokeVoidAsync("scrollToTop", "topOfPage");
+    }
+
+    public void ErrorSubmit()
+    {
+        toastService.ShowToast(
+                level: MBToastLevel.Error,
+                showIcon: true, 
+                message: "Please provide a comment and a rating.");
+    }
+}
